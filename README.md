@@ -1,16 +1,16 @@
-FreeWallet - Desktop Wallet
+# ASATRU - Air-Gapped Bitcoin Cold Storage
 ---
-FreeWallet is a free wallet which supports Bitcoin and Counterparty.
+ASATRU is a secure, air-gapped Bitcoin cold storage solution that supports Bitcoin and Counterparty.
 
-Installation Instructions
+## Installation Instructions
 ---
 ```
-Windows : Download FreeWallet.exe, run it, complete the installer.
-Mac/OSX : Download FreeWallet.dmg, mount, and drag FreeWallet app to 'Applications' folder
-Linux   : Download FreeWallet.tgz, extract it, run FreeWallet/install.sh
+Windows : Download ASATRU.exe, run it, complete the installer.
+Mac/OSX : Download ASATRU.dmg, mount, and drag ASATRU app to 'Applications' folder
+Linux   : Download ASATRU.tgz, extract it, run ASATRU/install.sh
 ```
 
-Build Notes
+## Build Notes
 ---
 The majority of the building is done via nw-builder :
 
@@ -26,13 +26,12 @@ Download and copy ffmpeg libraries to latest nwjs cache/* directories
 
 https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases
 
-Generate checksum.txt file 
+## Generate checksum.txt file 
 ---
 ```
-sha256sum FreeWallet.linux32.tgz > checksums.txt
-sha256sum FreeWallet.linux64.tgz >> checksums.txt
-sha256sum FreeWallet.osx64.dmg   >> checksums.txt
-sha256sum FreeWallet.win32.exe   >> checksums.txt
-sha256sum FreeWallet.win64.exe   >> checksums.txt
+sha256sum ASATRU.linux32.tgz > checksums.txt
+sha256sum ASATRU.linux64.tgz >> checksums.txt
+sha256sum ASATRU.osx64.dmg   >> checksums.txt
+sha256sum ASATRU.win32.exe   >> checksums.txt
+sha256sum ASATRU.win64.exe   >> checksums.txt
 ```
-
