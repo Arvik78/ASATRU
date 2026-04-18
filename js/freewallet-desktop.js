@@ -618,7 +618,7 @@ function addWalletAddress( network=1, address='', label='', type=1, index='', pa
         address: address, // Address to add
         network: network, // Default to mainnet (1=mainnet, 2=testnet)
         label: label,     // Default to blank label
-        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey, 7=bech32, 8=taproot
+        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey, 7=bech32, 8=taproot, 9=seedsigner
         path: path,       // node path for address (ex: m/44'/0'/0)
         index: index      // wallet address index (used in address sorting)
     };
@@ -806,6 +806,7 @@ function updateWalletOptions(){
     $('.footer-current-price').text('$' + numeral(getAssetPrice('XCP')).format('0,0.00') + ' USD');
     var info = getWalletAddressInfo(FW.WALLET_ADDRESS);
     if(info.type==3){
+        // Plain watch-only: hide all transaction actions
         $('#action-view-privkey').hide();
         $('#action-send').hide();
         $('#action-sign-message').hide();
@@ -818,6 +819,20 @@ function updateWalletOptions(){
         $('#action-asset-supply').hide();
         $('#action-asset-transfer').hide();
         $('#action-asset-lock').hide();
+    } else if(info.type==9){
+        // SeedSigner watch-only: send is available (signed via PSBT), private key actions are not
+        $('#action-view-privkey').hide();
+        $('#action-send').show();
+        $('#action-sign-message').hide();
+        $('#action-sign-transaction').show();
+        $('#action-dividend').show();
+        $('#action-broadcast-message').hide();
+        $('#header-token-actions').show();
+        $('#action-asset-create').show();
+        $('#action-asset-description').show();
+        $('#action-asset-supply').show();
+        $('#action-asset-transfer').show();
+        $('#action-asset-lock').show();
     } else {
         $('#action-view-privkey').show();
         $('#action-send').show();
@@ -927,7 +942,7 @@ function checkTokenAccess(feature){
         access = false;
     // Loop through all addresses except watch-only addresses (ownership not proven)
     FW.WALLET_ADDRESSES.forEach(function(item){
-        if(item.type!=3){
+        if(item.type!=3 && item.type!=9){
             FW.WALLET_BALANCES.forEach(function(itm){
                 if(itm.address==item.address){
                     itm.data.forEach(function(balance){
@@ -3520,7 +3535,29 @@ function signHardwareWalletTransaction(network, source, unsignedTx, callback){
     });
 }
 
-// Handle checking if an address is a hardware wallet
+// Handle signing a transaction using a SeedSigner device via PSBT + QR workflow
+function signSeedSignerTransaction(network, source, unsignedTx, callback){
+    var cb = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Creating PSBT for SeedSigner…');
+    createPSBTForSeedSigner(unsignedTx, source, network, function(err, psbtBase64){
+        if(err){
+            updateTransactionStatus('error', 'PSBT error: ' + err);
+            if(cb) cb(null);
+            return;
+        }
+        updateTransactionStatus('pending', 'Waiting for SeedSigner signature…');
+        dialogSeedSignerSign(psbtBase64, network, function(signedTxHex){
+            if(!signedTxHex){
+                updateTransactionStatus('error', 'SeedSigner signing cancelled or failed.');
+                if(cb) cb(null);
+                return;
+            }
+            if(cb) cb(signedTxHex);
+        });
+    });
+}
+
+
 function isHardwareWallet(address){
     var info  = getWalletAddressInfo(address),
         types = [4,5,6];
@@ -3529,10 +3566,21 @@ function isHardwareWallet(address){
     return false;
 }
 
+// Handle checking if an address is a SeedSigner watch-only wallet (type 9)
+function isSeedSignerAddress(address){
+    var info = getWalletAddressInfo(address);
+    return !!(info && info.type === 9);
+}
+
 // Handle signing a transaction based on what type of address it is
 function signTransaction(network, source, destination, unsignedTx, callback){
     // Check if this transaction should include a donation
     unsignedTx = checkDonate(network, source, destination, unsignedTx);
+    // Route SeedSigner addresses through the PSBT workflow
+    if(isSeedSignerAddress(source)){
+        signSeedSignerTransaction(network, source, unsignedTx, callback);
+        return;
+    }
     if(isHardwareWallet(source)){
         signHardwareWalletTransaction(network, source, unsignedTx);
     } else {

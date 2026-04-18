@@ -1,0 +1,143 @@
+<!-- SeedSigner xpub Import Form -->
+<form class="form-horizontal" id="import-seedsigner-form" data-toggle="validator" role="form">
+
+    <p>Enter (or scan) the <strong>account xpub</strong> exported by SeedSigner
+       (<code>m/44'/0'/0'</code> for mainnet P2PKH addresses).</p>
+
+    <!-- xpub entry -->
+    <div class="form-group">
+        <label for="ss-xpub" class="col-sm-3 control-label">xpub</label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control" id="ss-xpub" name="xpub"
+                   placeholder="xpub6…" autocomplete="off" required>
+            <div class="help-block with-errors"></div>
+        </div>
+    </div>
+
+    <!-- Webcam QR scan -->
+    <div class="form-group">
+        <div class="col-sm-offset-3 col-sm-9">
+            <button type="button" id="btn-ss-scan-xpub" class="btn btn-default btn-sm">
+                <i class="fa fa-fw fa-camera"></i> Scan xpub QR with webcam
+            </button>
+            <span id="ss-scan-status" class="small text-muted" style="margin-left:8px;"></span>
+        </div>
+    </div>
+
+    <!-- Webcam area (hidden until scan starts) -->
+    <div id="ss-webcam-area" style="display:none;" class="form-group">
+        <div class="col-sm-offset-3 col-sm-9 text-center">
+            <video id="ss-xpub-video" width="300" height="225"
+                   style="border:1px solid #ccc; border-radius:4px;" autoplay playsinline></video>
+            <canvas id="ss-xpub-canvas" style="display:none;"></canvas>
+        </div>
+    </div>
+
+    <!-- Label -->
+    <div class="form-group">
+        <label for="ss-label" class="col-sm-3 control-label">Label</label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control" id="ss-label" name="label"
+                   placeholder="SeedSigner Wallet" value="SeedSigner Wallet">
+        </div>
+    </div>
+
+    <!-- Address count -->
+    <div class="form-group">
+        <label for="ss-count" class="col-sm-3 control-label"># Addresses</label>
+        <div class="col-sm-9">
+            <input type="number" class="form-control" id="ss-count" name="count"
+                   min="1" max="100" value="10">
+        </div>
+    </div>
+
+    <div class="action-buttons pull-right">
+        <button type="submit" id="btn-ss-import" class="btn btn-success pull-right margin-left-5">
+            <i class="fa fa-lg fa-fw fa-thumbs-up"></i> Import
+        </button>
+        <button type="button" id="btn-ss-cancel" class="btn btn-danger pull-right margin-left-5">
+            <i class="fa fa-lg fa-fw fa-thumbs-down"></i> Cancel
+        </button>
+    </div>
+    <div class="clearfix"></div>
+
+</form>
+
+<script>
+$(document).ready(function(){
+
+    var network     = (FW.WALLET_NETWORK == 2) ? 'testnet' : 'mainnet';
+    var scanInterval = null;
+
+    // Focus xpub input
+    $('#ss-xpub').focus();
+
+    // Cancel
+    $('#btn-ss-cancel').click(function(){
+        stopWebcam('ss-xpub-video');
+        if(scanInterval){ clearInterval(scanInterval); }
+        dialogClose('dialog-seedsigner-import');
+    });
+
+    // Webcam QR scan
+    $('#btn-ss-scan-xpub').click(function(){
+        $('#ss-webcam-area').show();
+        $('#ss-scan-status').text('Starting webcam…');
+        startWebcam('ss-xpub-video', function(err){
+            if(err){
+                $('#ss-scan-status').text('Webcam error: ' + err);
+                return;
+            }
+            $('#ss-scan-status').text('Point webcam at SeedSigner xpub QR code');
+            scanInterval = scanXpubQR('ss-xpub-video','ss-xpub-canvas', network, function(xpub){
+                $('#ss-xpub').val(xpub);
+                $('#ss-webcam-area').hide();
+                $('#ss-scan-status').text('xpub scanned successfully!');
+            });
+        });
+    });
+
+    // Form submit
+    $('#import-seedsigner-form').validator().on('submit', function(e){
+        e.preventDefault();
+
+        stopWebcam('ss-xpub-video');
+        if(scanInterval){ clearInterval(scanInterval); }
+
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+
+        var xpub  = String(vals.xpub  || '').trim();
+        var label = String(vals.label || 'SeedSigner Wallet').trim();
+        var count = parseInt(vals.count || 10, 10);
+
+        if(!xpub){
+            errors.push('Please enter an xpub.');
+            $('#ss-xpub').closest('.form-group').addClass('has-error has-danger');
+        } else if(!validateXpub(xpub, network)){
+            errors.push('The xpub is not valid for ' + network + '. Please check and try again.');
+            $('#ss-xpub').closest('.form-group').addClass('has-error has-danger');
+        }
+
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>'));
+            return;
+        }
+
+        var result = importWatchOnlyWallet(xpub, label, network, count);
+        dialogClose('dialog-seedsigner-import');
+
+        if(result.error){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Import Failed', result.error);
+        } else {
+            dialogMessage(
+                '<i class="fa fa-lg fa-fw fa-info-circle"></i> SeedSigner Wallet Imported',
+                'Imported <b>' + result.added + '</b> watch-only address(es) from xpub.<br/>' +
+                'First address: <code>' + result.addresses[0].address + '</code><br/>' +
+                'Use the Send dialog to send Counterparty tokens – transactions will be signed by SeedSigner.'
+            );
+        }
+    });
+
+});
+</script>

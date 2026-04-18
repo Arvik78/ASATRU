@@ -1,0 +1,46 @@
+<!-- SeedSigner PSBT Sign Dialog -->
+<div class="seedsigner-sign-dialog">
+
+    <!-- Step 1: Show PSBT QR for SeedSigner to scan -->
+    <div id="seedsigner-step-1">
+        <p class="text-center">
+            <strong>Step 1:</strong> Scan this QR code with your SeedSigner device to sign the transaction.
+        </p>
+        <div id="seedsigner-psbt-qr" class="text-center" style="min-height:280px;">
+            <p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Generating PSBT QR…</p>
+        </div>
+    </div>
+
+    <!-- Step 2: Scan the signed PSBT back from SeedSigner -->
+    <div id="seedsigner-step-2" class="margin-top-10">
+        <p class="text-center">
+            <strong>Step 2:</strong> After signing, press the button below and point your webcam at
+            the SeedSigner screen to scan the signed transaction.
+        </p>
+        <div class="text-center">
+            <button id="btn-seedsigner-scan" class="btn btn-primary">
+                <i class="fa fa-fw fa-camera"></i> Scan Signed PSBT
+            </button>
+        </div>
+    </div>
+
+    <!-- Webcam / canvas scan area (hidden until scan is started) -->
+    <div id="seedsigner-scan-area" style="display:none; margin-top:10px;">
+        <div class="text-center">
+            <video id="seedsigner-video" width="320" height="240"
+                   style="border:1px solid #ccc; border-radius:4px;" autoplay playsinline></video>
+        </div>
+        <canvas id="seedsigner-canvas" style="display:none;"></canvas>
+    </div>
+
+    <!-- Status line -->
+    <div id="seedsigner-status" class="text-center text-muted small" style="margin-top:8px;"></div>
+
+    <!-- Cancel button -->
+    <div class="text-right" style="margin-top:12px;">
+        <button id="btn-seedsigner-cancel" class="btn btn-danger btn-sm">
+            <i class="fa fa-fw fa-ban"></i> Cancel
+        </button>
+    </div>
+
+</div>
