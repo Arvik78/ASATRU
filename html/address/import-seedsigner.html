@@ -130,11 +130,12 @@ $(document).ready(function(){
         if(result.error){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Import Failed', result.error);
         } else {
+            var firstAddr = (result.addresses && result.addresses.length > 0) ? result.addresses[0].address : '';
             dialogMessage(
                 '<i class="fa fa-lg fa-fw fa-info-circle"></i> SeedSigner Wallet Imported',
-                'Imported <b>' + result.added + '</b> watch-only address(es) from xpub.<br/>' +
-                'First address: <code>' + result.addresses[0].address + '</code><br/>' +
-                'Use the Send dialog to send Counterparty tokens – transactions will be signed by SeedSigner.'
+                'Imported <b>' + result.added + '</b> watch-only address(es) from xpub.' +
+                (firstAddr ? '<br/>First address: <code>' + firstAddr + '</code>' : '') +
+                '<br/>Use the Send dialog to send Counterparty tokens – transactions will be signed by SeedSigner.'
             );
         }
     });
